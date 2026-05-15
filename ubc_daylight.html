@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>UBC Daylight</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; }
+  body {
+    background: #0a1428;
+    color: #e6edf3;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-weight: 300;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 5vh 5vw 4vh 5vw;
+    background-image: linear-gradient(180deg, #0a1428 0%, #1a2547 50%, #2d3b6b 100%);
+  }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4vh;
+  }
+  .subhead {
+    font-size: 0.85vw;
+    color: #7d8590;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-bottom: 0.5vh;
+  }
+  .heading {
+    font-size: 2vw;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  .clock {
+    font-size: 1.3vw;
+    color: #c9d1d9;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.05em;
+  }
+
+  /* Big arc */
+  .arc-area {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    min-height: 0;
+  }
+  svg.arc {
+    width: 80%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  /* Stats below the arc */
+  .footer {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 3vw;
+    padding-top: 4vh;
+    border-top: 1px solid rgba(230, 237, 243, 0.15);
+  }
+  .stat .label {
+    font-size: 0.85vw;
+    color: #8b949e;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    margin-bottom: 1vh;
+  }
+  .stat .value {
+    font-size: 2.2vw;
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+  .stat .sub {
+    font-size: 0.9vw;
+    color: #8b949e;
+    margin-top: 0.4vh;
+  }
+  .stat .sub.gain  { color: #7ee787; }
+  .stat .sub.loss  { color: #ffa657; }
+
+  .loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0a1428;
+    color: #484f58;
+    font-size: 1.5vw;
+    z-index: 100;
+  }
+  .loading.hidden { display: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="subhead">Daylight</div>
+    <div class="heading">UBC Vancouver Campus</div>
+  </div>
+  <div class="clock" id="clock">--:--</div>
+</header>
+
+<div class="arc-area">
+  <svg class="arc" id="arc" viewBox="0 0 1000 460" preserveAspectRatio="xMidYEnd meet"></svg>
+</div>
+
+<div class="footer" id="footer"></div>
+
+<div class="loading" id="loading">Loading…</div>
+
+<script>
+const LAT = 49.2606;
+const LON = -123.2460;
+const RELOAD_MS = 60 * 60 * 1000;  // re-fetch hourly (sunrise/sunset only change daily)
+
+async function loadData() {
+  try {
+    // Open-Meteo daily endpoint gives us sunrise/sunset and daylight_duration
+    // We fetch today + yesterday to compute the difference
+    const url = `https://api.open-meteo.com/v1/forecast`
+      + `?latitude=${LAT}&longitude=${LON}`
+      + `&daily=sunrise,sunset,daylight_duration`
+      + `&past_days=1&forecast_days=2`
+      + `&timezone=America%2FVancouver`;
+    const res = await fetch(url);
+    const data = await res.json();
+    render(data);
+    document.getElementById('loading').classList.add('hidden');
+  } catch (e) {
+    console.error('Data load failed:', e);
+    document.getElementById('loading').textContent = 'Unable to load data.';
+  }
+}
+
+function render(data) {
+  // Open-Meteo returns daily.sunrise[0]=yesterday, [1]=today, [2]=tomorrow
+  // ...because we set past_days=1, forecast_days=2
+  const dailySunrises = data.daily.sunrise;
+  const dailySunsets = data.daily.sunset;
+  const dailyDurations = data.daily.daylight_duration;
+
+  // Find today's index. Past_days=1 + forecast_days=2 should give:
+  // [0] = yesterday, [1] = today, [2] = tomorrow
+  const todayIdx = 1;
+
+  const todayRise   = new Date(dailySunrises[todayIdx]);
+  const todaySet    = new Date(dailySunsets[todayIdx]);
+  const todayDurSec = dailyDurations[todayIdx];
+  const ydayDurSec  = dailyDurations[todayIdx - 1];
+  const tmrwRise    = new Date(dailySunrises[todayIdx + 1]);
+  const tmrwSet     = new Date(dailySunsets[todayIdx + 1]);
+
+  const now = new Date();
+
+  // Compute progress through today's daylight window (0..1)
+  // < 0 = before sunrise, > 1 = after sunset
+  const dayMs = todaySet - todayRise;
+  const elapsed = now - todayRise;
+  const progress = elapsed / dayMs;
+
+  drawArc(progress, todayRise, todaySet);
+
+  // Footer stats
+  const diffSec = todayDurSec - ydayDurSec;
+  const diffMin = Math.round(Math.abs(diffSec) / 60);
+  const gainOrLose = diffSec >= 0 ? 'gain' : 'loss';
+  const diffSign = diffSec >= 0 ? '+' : '−';
+
+  const remainingMs = todaySet - now;
+  let remainingText = '';
+  if (remainingMs > 0) {
+    const h = Math.floor(remainingMs / 3600000);
+    const m = Math.floor((remainingMs % 3600000) / 60000);
+    remainingText = `${h}h ${m}m`;
+  } else {
+    // After sunset — show until sunrise
+    const untilRise = tmrwRise - now;
+    const h = Math.floor(untilRise / 3600000);
+    const m = Math.floor((untilRise % 3600000) / 60000);
+    remainingText = `${h}h ${m}m`;
+  }
+
+  const remainingLabel = remainingMs > 0 ? 'Daylight Left' : 'Until Sunrise';
+
+  document.getElementById('footer').innerHTML = `
+    <div class="stat">
+      <div class="label">Sunrise</div>
+      <div class="value">${fmtTime(todayRise)}</div>
+      <div class="sub">Tomorrow ${fmtTime(tmrwRise)}</div>
+    </div>
+    <div class="stat">
+      <div class="label">Sunset</div>
+      <div class="value">${fmtTime(todaySet)}</div>
+      <div class="sub">Tomorrow ${fmtTime(tmrwSet)}</div>
+    </div>
+    <div class="stat">
+      <div class="label">${remainingLabel}</div>
+      <div class="value">${remainingText}</div>
+      <div class="sub">${fmtDuration(todayDurSec)} total today</div>
+    </div>
+    <div class="stat">
+      <div class="label">vs Yesterday</div>
+      <div class="value">${diffSign}${diffMin}<span style="font-size:1.2vw;color:#8b949e;margin-left:0.3vw">min</span></div>
+      <div class="sub ${gainOrLose}">${diffSec >= 0 ? 'Gaining' : 'Losing'} daylight</div>
+    </div>
+  `;
+}
+
+function drawArc(progress, sunrise, sunset) {
+  const svg = document.getElementById('arc');
+  // Arc bows up — we go from (50, 400) → peak at (500, 60) → (950, 400)
+  // It's a semicircle on a 1000-wide canvas
+  const cx = 500, cy = 400;
+  const rx = 450, ry = 340;
+
+  // Clamp progress for sun position
+  const clamped = Math.max(0, Math.min(1, progress));
+  // Angle on the arc: 0 = sunrise (left), 1 = sunset (right) — meaning angle goes π → 0
+  const theta = Math.PI - (clamped * Math.PI);
+  const sunX = cx + rx * Math.cos(theta);
+  const sunY = cy - ry * Math.sin(theta);
+
+  // Whether the sun is currently up
+  const sunIsUp = progress >= 0 && progress <= 1;
+
+  // Build SVG
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="arc-grad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#ffb84d" stop-opacity="0.5"/>
+        <stop offset="50%" stop-color="#ffd700" stop-opacity="0.8"/>
+        <stop offset="100%" stop-color="#ff6b4d" stop-opacity="0.5"/>
+      </linearGradient>
+      <radialGradient id="sun-grad" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#fff8e0"/>
+        <stop offset="60%" stop-color="#ffd700"/>
+        <stop offset="100%" stop-color="#ff8c40"/>
+      </radialGradient>
+    </defs>
+
+    <!-- Horizon line -->
+    <line x1="0" y1="400" x2="1000" y2="400"
+          stroke="rgba(230,237,243,0.2)" stroke-width="1" stroke-dasharray="4 6"/>
+
+    <!-- Arc path -->
+    <path d="M 50 400 A 450 340 0 0 1 950 400"
+          fill="none" stroke="url(#arc-grad)" stroke-width="3" stroke-linecap="round"/>
+
+    <!-- Sunrise marker -->
+    <circle cx="50" cy="400" r="8" fill="#ffb84d"/>
+    <text x="50" y="440" text-anchor="middle" fill="#c9d1d9"
+          font-size="20" font-family="inherit" font-weight="400">
+      ${fmtTime(sunrise)}
+    </text>
+    <text x="50" y="465" text-anchor="middle" fill="#7d8590"
+          font-size="13" font-family="inherit" letter-spacing="3">
+      SUNRISE
+    </text>
+
+    <!-- Sunset marker -->
+    <circle cx="950" cy="400" r="8" fill="#ff6b4d"/>
+    <text x="950" y="440" text-anchor="middle" fill="#c9d1d9"
+          font-size="20" font-family="inherit" font-weight="400">
+      ${fmtTime(sunset)}
+    </text>
+    <text x="950" y="465" text-anchor="middle" fill="#7d8590"
+          font-size="13" font-family="inherit" letter-spacing="3">
+      SUNSET
+    </text>
+
+    <!-- Sun (only show if it's up) -->
+    ${sunIsUp ? `
+      <circle cx="${sunX}" cy="${sunY}" r="28" fill="url(#sun-grad)"
+              filter="drop-shadow(0 0 20px rgba(255, 215, 0, 0.6))"/>
+      <circle cx="${sunX}" cy="${sunY}" r="42" fill="none"
+              stroke="rgba(255, 215, 0, 0.2)" stroke-width="2"/>
+    ` : `
+      <!-- Moon hint at sunset position when sun is down -->
+      <text x="500" y="200" text-anchor="middle" fill="#7d8590"
+            font-size="22" font-family="inherit" font-weight="300">
+        🌙
+      </text>
+    `}
+  `;
+}
+
+function fmtTime(d) {
+  return d.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit' });
+}
+function fmtDuration(sec) {
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  return `${h}h ${m}m`;
+}
+
+function updateClock() {
+  document.getElementById('clock').textContent =
+    new Date().toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' });
+}
+
+function reposition() {
+  // Recompute sun position every minute as time passes
+  loadData();
+}
+
+loadData();
+updateClock();
+setInterval(reposition, 60 * 1000);          // every minute, update arc
+setInterval(loadData, RELOAD_MS);            // hourly, refetch
+setInterval(updateClock, 30000);
+</script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SVG Test</title>
+<style>
+  body {
+    margin: 0; height: 100vh;
+    background: #0d1117; color: #e6edf3;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 24px;
+  }
+  .row { display: flex; gap: 48px; align-items: center; }
+  .box { text-align: center; }
+  .box small { display: block; margin-top: 8px; color: #8b949e; font-size: 14px; letter-spacing: 0.1em; }
+  .result { font-size: 18px; line-height: 1.8; text-align: center; }
+  .yes { color: #7ee787; } .no { color: #f85149; }
+  code { color: #58a6ff; font-size: 13px; word-break: break-all; max-width: 80vw; }
+</style>
+</head>
+<body>
+
+<div class="row">
+  <!-- SMIL animation: rotating sun -->
+  <div class="box">
+    <svg width="90" height="90" viewBox="0 0 100 100">
+      <g fill="none" stroke="#e3b341" stroke-width="6" stroke-linecap="round">
+        <circle cx="50" cy="50" r="18" fill="#e3b341" stroke="none"/>
+        <g>
+          <line x1="50" y1="8"  x2="50" y2="20"/>
+          <line x1="50" y1="80" x2="50" y2="92"/>
+          <line x1="8"  y1="50" x2="20" y2="50"/>
+          <line x1="80" y1="50" x2="92" y2="50"/>
+          <animateTransform attributeName="transform" type="rotate"
+            from="0 50 50" to="360 50 50" dur="6s" repeatCount="indefinite"/>
+        </g>
+      </g>
+    </svg>
+    <small>SMIL</small>
+  </div>
+
+  <!-- CSS-in-SVG animation: pulsing dot -->
+  <div class="box">
+    <svg width="90" height="90" viewBox="0 0 100 100">
+      <style>
+        .pulse { animation: grow 1.5s ease-in-out infinite; transform-origin: 50px 50px; }
+        @keyframes grow { 0%,100% { r: 14px; } 50% { r: 30px; } }
+      </style>
+      <circle class="pulse" cx="50" cy="50" r="14" fill="#58a6ff"/>
+    </svg>
+    <small>CSS-in-SVG</small>
+  </div>
+</div>
+
+<div class="result" id="result">Running checks…</div>
+<code id="ua"></code>
+
+<script>
+  const checks = [];
+
+  // 1. Container query unit support
+  const cq = (CSS && CSS.supports && CSS.supports('width', '1cqw'));
+  checks.push(['Container query units (cqw)', cq]);
+
+  // 2. CSS.supports for container-type
+  const ct = (CSS && CSS.supports && CSS.supports('container-type', 'size'));
+  checks.push(['container-type', ct]);
+
+  // 3. clamp()
+  const cl = (CSS && CSS.supports && CSS.supports('width', 'clamp(10px, 5vw, 100px)'));
+  checks.push(['clamp()', cl]);
+
+  // 4. SMIL — does the browser report the animate element as supported?
+  const smil = (typeof SVGAnimateElement !== 'undefined');
+  checks.push(['SMIL animation (visual check too)', smil]);
+
+  // 5. backdrop-filter (used in our cards)
+  const bf = (CSS && CSS.supports && (CSS.supports('backdrop-filter', 'blur(8px)') || CSS.supports('-webkit-backdrop-filter', 'blur(8px)')));
+  checks.push(['backdrop-filter', bf]);
+
+  const html = checks.map(([name, ok]) =>
+    `${ok ? '<span class="yes">✓</span>' : '<span class="no">✗</span>'} ${name}`
+  ).join('<br>');
+  document.getElementById('result').innerHTML =
+    html + '<br><br><span style="color:#8b949e;font-size:14px">Watch the two icons above — do they MOVE?</span>';
+
+  document.getElementById('ua').textContent = navigator.userAgent;
+</script>
+</body>
+</html>

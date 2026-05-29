@@ -100,12 +100,12 @@
   }
   .icon-wrap {
     margin-top: 4vmin;
-    width: 14vmin;
-    height: 14vmin;
+    width: 16vmin;
+    height: 16vmin;
     flex-shrink: 0;
-    filter: drop-shadow(0 0.4vmin 1.2vmin rgba(0,0,0,0.5));
+    filter: drop-shadow(0 0.4vmin 1.2vmin rgba(0,0,0,0.4));
   }
-  .icon-wrap svg { width: 100%; height: 100%; }
+  .icon-wrap img { width: 100%; height: 100%; display: block; }
 
   .condition {
     font-size: 4.5vmin;
@@ -172,12 +172,12 @@
     margin-bottom: 1vmin;
   }
   .hour .h-icon {
-    width: 4.5vmin;
-    height: 4.5vmin;
+    width: 5vmin;
+    height: 5vmin;
     margin: 0 auto 0.8vmin auto;
-    opacity: 0.95;
+    opacity: 0.98;
   }
-  .hour .h-icon svg { width: 100%; height: 100%; }
+  .hour .h-icon img { width: 100%; height: 100%; display: block; }
   .hour .h-temp {
     font-size: 2.6vmin;
     font-weight: 500;
@@ -230,150 +230,60 @@
 
 <div class="loading" id="loading">Loading weather…</div>
 
-<!-- SVG ICON LIBRARY — line-style, white -->
-<svg style="display:none">
-  <defs>
-    <!-- SUNNY -->
-    <symbol id="ic-sunny" viewBox="0 0 100 100">
-      <g fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round">
-        <circle cx="50" cy="50" r="14" fill="currentColor" stroke="none"/>
-        <line x1="50" y1="6"  x2="50" y2="20"/>
-        <line x1="50" y1="80" x2="50" y2="94"/>
-        <line x1="6"  y1="50" x2="20" y2="50"/>
-        <line x1="80" y1="50" x2="94" y2="50"/>
-        <line x1="18" y1="18" x2="28" y2="28"/>
-        <line x1="72" y1="72" x2="82" y2="82"/>
-        <line x1="82" y1="18" x2="72" y2="28"/>
-        <line x1="28" y1="72" x2="18" y2="82"/>
-      </g>
-    </symbol>
-
-    <!-- CLOUDY -->
-    <symbol id="ic-cloudy" viewBox="0 0 100 100">
-      <g fill="none" stroke="currentColor" stroke-width="3.5" stroke-linejoin="round">
-        <path d="M28 70 Q14 70 14 56 Q14 44 26 42 Q28 28 44 28 Q60 28 64 42 Q80 42 80 56 Q80 70 66 70 Z"
-              fill="currentColor" fill-opacity="0.95" stroke="none"/>
-      </g>
-    </symbol>
-
-    <!-- PARTLY CLOUDY -->
-    <symbol id="ic-partly" viewBox="0 0 100 100">
-      <g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
-        <circle cx="32" cy="34" r="10" fill="currentColor" stroke="none"/>
-        <line x1="32" y1="14" x2="32" y2="20"/>
-        <line x1="12" y1="34" x2="18" y2="34"/>
-        <line x1="46" y1="34" x2="52" y2="34"/>
-        <line x1="18" y1="20" x2="22" y2="24"/>
-        <line x1="42" y1="20" x2="46" y2="24"/>
-      </g>
-      <path d="M38 76 Q24 76 24 64 Q24 54 34 52 Q36 42 50 42 Q64 42 68 54 Q80 54 80 64 Q80 76 68 76 Z"
-            fill="currentColor" fill-opacity="0.95"/>
-    </symbol>
-
-    <!-- FOG -->
-    <symbol id="ic-fog" viewBox="0 0 100 100">
-      <g fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round">
-        <line x1="14" y1="38" x2="86" y2="38"/>
-        <line x1="20" y1="52" x2="80" y2="52"/>
-        <line x1="14" y1="66" x2="74" y2="66"/>
-        <line x1="22" y1="80" x2="86" y2="80"/>
-      </g>
-    </symbol>
-
-    <!-- RAIN -->
-    <symbol id="ic-rain" viewBox="0 0 100 100">
-      <path d="M28 56 Q14 56 14 44 Q14 34 24 32 Q26 20 42 20 Q58 20 62 32 Q78 32 78 44 Q78 56 64 56 Z"
-            fill="currentColor" fill-opacity="0.95"/>
-      <g fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round">
-        <line x1="30" y1="66" x2="26" y2="80"/>
-        <line x1="46" y1="66" x2="42" y2="80"/>
-        <line x1="62" y1="66" x2="58" y2="80"/>
-      </g>
-    </symbol>
-
-    <!-- HEAVY RAIN -->
-    <symbol id="ic-rain-heavy" viewBox="0 0 100 100">
-      <path d="M28 50 Q14 50 14 38 Q14 28 24 26 Q26 14 42 14 Q58 14 62 26 Q78 26 78 38 Q78 50 64 50 Z"
-            fill="currentColor" fill-opacity="0.95"/>
-      <g fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round">
-        <line x1="24" y1="60" x2="20" y2="76"/>
-        <line x1="36" y1="60" x2="32" y2="78"/>
-        <line x1="48" y1="60" x2="44" y2="76"/>
-        <line x1="60" y1="60" x2="56" y2="78"/>
-        <line x1="72" y1="60" x2="68" y2="76"/>
-      </g>
-    </symbol>
-
-    <!-- DRIZZLE -->
-    <symbol id="ic-drizzle" viewBox="0 0 100 100">
-      <path d="M28 56 Q14 56 14 44 Q14 34 24 32 Q26 20 42 20 Q58 20 62 32 Q78 32 78 44 Q78 56 64 56 Z"
-            fill="currentColor" fill-opacity="0.95"/>
-      <g fill="currentColor">
-        <circle cx="30" cy="74" r="2"/>
-        <circle cx="46" cy="74" r="2"/>
-        <circle cx="62" cy="74" r="2"/>
-        <circle cx="38" cy="84" r="2"/>
-        <circle cx="54" cy="84" r="2"/>
-      </g>
-    </symbol>
-
-    <!-- SNOW -->
-    <symbol id="ic-snow" viewBox="0 0 100 100">
-      <path d="M28 50 Q14 50 14 38 Q14 28 24 26 Q26 14 42 14 Q58 14 62 26 Q78 26 78 38 Q78 50 64 50 Z"
-            fill="currentColor" fill-opacity="0.95"/>
-      <g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-        <g transform="translate(28 72)"><line x1="-6" y1="0" x2="6" y2="0"/><line x1="0" y1="-6" x2="0" y2="6"/><line x1="-4" y1="-4" x2="4" y2="4"/><line x1="-4" y1="4" x2="4" y2="-4"/></g>
-        <g transform="translate(50 80)"><line x1="-6" y1="0" x2="6" y2="0"/><line x1="0" y1="-6" x2="0" y2="6"/><line x1="-4" y1="-4" x2="4" y2="4"/><line x1="-4" y1="4" x2="4" y2="-4"/></g>
-        <g transform="translate(72 72)"><line x1="-6" y1="0" x2="6" y2="0"/><line x1="0" y1="-6" x2="0" y2="6"/><line x1="-4" y1="-4" x2="4" y2="4"/><line x1="-4" y1="4" x2="4" y2="-4"/></g>
-      </g>
-    </symbol>
-
-    <!-- THUNDERSTORM -->
-    <symbol id="ic-thunder" viewBox="0 0 100 100">
-      <path d="M28 50 Q14 50 14 38 Q14 28 24 26 Q26 14 42 14 Q58 14 62 26 Q78 26 78 38 Q78 50 64 50 Z"
-            fill="currentColor" fill-opacity="0.95"/>
-      <path d="M48 56 L36 76 L48 76 L42 92 L60 70 L48 70 L54 56 Z"
-            fill="#ffd34d" stroke="none"/>
-    </symbol>
-  </defs>
-</svg>
+<!-- Meteocons icons loaded from jsDelivr CDN at render time -->
 
 <script>
 const LAT = 49.2606;
 const LON = -123.2460;   // UBC Vancouver campus
 const RELOAD_MS = 15 * 60 * 1000;
 
-// Map WMO weather codes → { label, icon (SVG id), bg (image bucket) }
+// Meteocons base URL (jsDelivr CDN, animated fill style)
+// Each icon is a self-contained animated SVG.
+const ICON_BASE = 'https://cdn.jsdelivr.net/npm/@bybas/weather-icons/production/fill/all';
+
+// Map WMO weather codes → { label, icon (day), icon_night (optional), bg }
+// Icon names follow Meteocons naming. If icon_night is set, it's used at night.
 const WX = {
-  0:  { label: 'Clear',                icon: 'ic-sunny',      bg: 'sunny' },
-  1:  { label: 'Mainly Clear',         icon: 'ic-sunny',      bg: 'sunny' },
-  2:  { label: 'Partly Cloudy',        icon: 'ic-partly',     bg: 'cloudy' },
-  3:  { label: 'Overcast',             icon: 'ic-cloudy',     bg: 'cloudy' },
-  45: { label: 'Fog',                  icon: 'ic-fog',        bg: 'fog' },
-  48: { label: 'Freezing Fog',         icon: 'ic-fog',        bg: 'fog' },
-  51: { label: 'Light Drizzle',        icon: 'ic-drizzle',    bg: 'drizzle' },
-  53: { label: 'Drizzle',              icon: 'ic-drizzle',    bg: 'drizzle' },
-  55: { label: 'Heavy Drizzle',        icon: 'ic-rain',       bg: 'drizzle' },
-  56: { label: 'Freezing Drizzle',     icon: 'ic-rain',       bg: 'freezing-rain' },
-  57: { label: 'Freezing Drizzle',     icon: 'ic-rain',       bg: 'freezing-rain' },
-  61: { label: 'Light Rain',           icon: 'ic-rain',       bg: 'rain-light' },
-  63: { label: 'Rain',                 icon: 'ic-rain',       bg: 'rain' },
-  65: { label: 'Heavy Rain',           icon: 'ic-rain-heavy', bg: 'rain-heavy' },
-  66: { label: 'Freezing Rain',        icon: 'ic-rain',       bg: 'freezing-rain' },
-  67: { label: 'Freezing Rain',        icon: 'ic-rain',       bg: 'freezing-rain' },
-  71: { label: 'Light Snow',           icon: 'ic-snow',       bg: 'snow-light' },
-  73: { label: 'Snow',                 icon: 'ic-snow',       bg: 'snow' },
-  75: { label: 'Heavy Snow',           icon: 'ic-snow',       bg: 'snow-heavy' },
-  77: { label: 'Snow Grains',          icon: 'ic-snow',       bg: 'snow' },
-  80: { label: 'Light Showers',        icon: 'ic-rain',       bg: 'rain-light' },
-  81: { label: 'Showers',              icon: 'ic-rain',       bg: 'rain' },
-  82: { label: 'Heavy Showers',        icon: 'ic-rain-heavy', bg: 'rain-heavy' },
-  85: { label: 'Snow Showers',         icon: 'ic-snow',       bg: 'snow' },
-  86: { label: 'Heavy Snow Showers',   icon: 'ic-snow',       bg: 'snow-heavy' },
-  95: { label: 'Thunderstorm',         icon: 'ic-thunder',    bg: 'thunderstorm' },
-  96: { label: 'Thunderstorm + Hail',  icon: 'ic-thunder',    bg: 'thunderstorm' },
-  99: { label: 'Severe Thunderstorm',  icon: 'ic-thunder',    bg: 'thunderstorm' },
+  0:  { label: 'Clear',                icon: 'clear-day',                  icon_night: 'clear-night',                  bg: 'sunny' },
+  1:  { label: 'Mainly Clear',         icon: 'clear-day',                  icon_night: 'clear-night',                  bg: 'sunny' },
+  2:  { label: 'Partly Cloudy',        icon: 'partly-cloudy-day',          icon_night: 'partly-cloudy-night',          bg: 'cloudy' },
+  3:  { label: 'Overcast',             icon: 'overcast-day',               icon_night: 'overcast-night',               bg: 'cloudy' },
+  45: { label: 'Fog',                  icon: 'fog-day',                    icon_night: 'fog-night',                    bg: 'fog' },
+  48: { label: 'Freezing Fog',         icon: 'fog-day',                    icon_night: 'fog-night',                    bg: 'fog' },
+  51: { label: 'Light Drizzle',        icon: 'partly-cloudy-day-drizzle',  icon_night: 'partly-cloudy-night-drizzle',  bg: 'drizzle' },
+  53: { label: 'Drizzle',              icon: 'drizzle',                                                                bg: 'drizzle' },
+  55: { label: 'Heavy Drizzle',        icon: 'drizzle',                                                                bg: 'drizzle' },
+  56: { label: 'Freezing Drizzle',     icon: 'sleet',                                                                  bg: 'freezing-rain' },
+  57: { label: 'Freezing Drizzle',     icon: 'sleet',                                                                  bg: 'freezing-rain' },
+  61: { label: 'Light Rain',           icon: 'partly-cloudy-day-rain',     icon_night: 'partly-cloudy-night-rain',     bg: 'rain-light' },
+  63: { label: 'Rain',                 icon: 'rain',                                                                   bg: 'rain' },
+  65: { label: 'Heavy Rain',           icon: 'extreme-rain',                                                           bg: 'rain-heavy' },
+  66: { label: 'Freezing Rain',        icon: 'sleet',                                                                  bg: 'freezing-rain' },
+  67: { label: 'Freezing Rain',        icon: 'sleet',                                                                  bg: 'freezing-rain' },
+  71: { label: 'Light Snow',           icon: 'partly-cloudy-day-snow',     icon_night: 'partly-cloudy-night-snow',     bg: 'snow-light' },
+  73: { label: 'Snow',                 icon: 'snow',                                                                   bg: 'snow' },
+  75: { label: 'Heavy Snow',           icon: 'extreme-snow',                                                           bg: 'snow-heavy' },
+  77: { label: 'Snow Grains',          icon: 'snowflake',                                                              bg: 'snow' },
+  80: { label: 'Light Showers',        icon: 'partly-cloudy-day-rain',     icon_night: 'partly-cloudy-night-rain',     bg: 'rain-light' },
+  81: { label: 'Showers',              icon: 'rain',                                                                   bg: 'rain' },
+  82: { label: 'Heavy Showers',        icon: 'extreme-rain',                                                           bg: 'rain-heavy' },
+  85: { label: 'Snow Showers',         icon: 'partly-cloudy-day-snow',     icon_night: 'partly-cloudy-night-snow',     bg: 'snow' },
+  86: { label: 'Heavy Snow Showers',   icon: 'extreme-snow',                                                           bg: 'snow-heavy' },
+  95: { label: 'Thunderstorm',         icon: 'thunderstorms',                                                          bg: 'thunderstorm' },
+  96: { label: 'Thunderstorm + Hail',  icon: 'thunderstorms-extreme',                                                  bg: 'thunderstorm' },
+  99: { label: 'Severe Thunderstorm',  icon: 'thunderstorms-extreme',                                                  bg: 'thunderstorm' },
 };
+
+// Pick the right icon name based on is_day flag
+function iconNameFor(wx, isDay) {
+  if (!isDay && wx.icon_night) return wx.icon_night;
+  return wx.icon;
+}
+
+// Build the full URL for an icon
+function iconUrl(name) {
+  return `${ICON_BASE}/${name}.svg`;
+}
 
 // Background images per bucket (Unsplash placeholders, swap with your own)
 const BG_IMAGES = {
@@ -414,7 +324,8 @@ async function loadWeather() {
 function render(data) {
   const c = data.current;
   const code = c.weather_code;
-  const wx = WX[code] || { label: 'Conditions', icon: 'ic-cloudy', bg: 'cloudy' };
+  const isDay = !!c.is_day;
+  const wx = WX[code] || { label: 'Conditions', icon: 'cloudy', bg: 'cloudy' };
 
   // Background
   const bgUrl = BG_IMAGES[wx.bg] || BG_IMAGES['cloudy'];
@@ -424,7 +335,7 @@ function render(data) {
   document.getElementById('temp').innerHTML =
     `${Math.round(c.temperature_2m)}<span class="unit">°C</span>`;
   document.getElementById('icon-wrap').innerHTML =
-    `<svg><use href="#${wx.icon}"/></svg>`;
+    `<img src="${iconUrl(iconNameFor(wx, isDay))}" alt="">`;
   document.getElementById('condition').textContent = wx.label;
 
   // Pills — floating, not a panel
@@ -461,12 +372,14 @@ function render(data) {
   for (let i = 0; i < slice.length; i++) {
     const idx = startIdx + i;
     const t = new Date(times[idx]);
-    const hourWx = WX[hourly.weather_code[idx]] || { icon: 'ic-cloudy' };
+    const hourWx = WX[hourly.weather_code[idx]] || { icon: 'cloudy' };
+    // Use day icon if hour is between 6am-8pm, else night icon (rough but OK without dawn/dusk data)
+    const hourIsDay = t.getHours() >= 6 && t.getHours() < 20;
     const pop = hourly.precipitation_probability[idx];
     html += `
       <div class="hour">
         <div class="h-time">${t.toLocaleTimeString('en-CA', {hour: 'numeric'})}</div>
-        <div class="h-icon"><svg><use href="#${hourWx.icon}"/></svg></div>
+        <div class="h-icon"><img src="${iconUrl(iconNameFor(hourWx, hourIsDay))}" alt=""></div>
         <div class="h-temp">${Math.round(hourly.temperature_2m[idx])}°</div>
         ${pop >= 20 ? `<div class="h-rain">${pop}%</div>` : ''}
       </div>

@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>UBC Weather</title>
+
+<!-- Preload all Meteocons we use, so icons fetch in parallel at load -->
+<link rel="preload" as="image" href="https://cdn.jsdelivr.net/npm/@bybas/weather-icons/production/fill/all/clear-day.svg">
+<link rel="preload" as="image" href="https://cdn.jsdelivr.net/npm/@bybas/weather-icons/production/fill/all/clear-night.svg">
+<link rel="preload" as="image" href="https://cdn.jsdelivr.net/npm/@bybas/weather-icons/production/fill/all/partly-cloudy-day.svg">
+<link rel="preload" as="image" href="https://cdn.jsdelivr.net/npm/@bybas/weather-icons/production/fill/all/partly-cloudy-night.svg">
+<link rel="preload" as="image" href="https://cdn.jsdelivr.net/npm/@bybas/weather-icons/production/fill/all/overcast-day.svg">
+<link rel="preload" as="image" href="https://cdn.jsdelivr.net/npm/@bybas/weather-icons/production/fill/all/overcast-night.svg">
+<link rel="preload" as="image" href="https://cdn.jsdelivr.net/npm/@bybas/weather-icons/production/fill/all/fog-day.svg">
+<link rel="preload" as="image" href="https://cdn.jsdelivr.net/npm/@bybas/weather-icons/production/fill/all/fog-night.svg">
+<link rel="preload" as="image" href="https://cdn.jsdelivr.net/npm/@bybas/weather-icons/production/fill/all/drizzle.svg">
+<link rel="preload" as="image" href="https://cdn.jsdelivr.net/npm/@bybas/weather-icons/production/fill/all/rain.svg">
+<link rel="preload" as="image" href="https://cdn.jsdelivr.net/npm/@bybas/weather-icons/production/fill/all/extreme-rain.svg">
+<link rel="preload" as="image" href="https://cdn.jsdelivr.net/npm/@bybas/weather-icons/production/fill/all/partly-cloudy-day-rain.svg">
+<link rel="preload" as="image" href="https://cdn.jsdelivr.net/npm/@bybas/weather-icons/production/fill/all/partly-cloudy-night-rain.svg">
+<link rel="preload" as="image" href="https://cdn.jsdelivr.net/npm/@bybas/weather-icons/production/fill/all/snow.svg">
+<link rel="preload" as="image" href="https://cdn.jsdelivr.net/npm/@bybas/weather-icons/production/fill/all/extreme-snow.svg">
+<link rel="preload" as="image" href="https://cdn.jsdelivr.net/npm/@bybas/weather-icons/production/fill/all/thunderstorms.svg">
+<link rel="preload" as="image" href="https://cdn.jsdelivr.net/npm/@bybas/weather-icons/production/fill/all/sleet.svg">
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; }
+  body {
+    background: #0a0e14;
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-weight: 300;
+    height: 100vh;
+    position: relative;
+  }
+
+  /* FULL-BLEED PHOTO BACKGROUND + GRADIENT */
+  .bg {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    transition: background-image 0.8s ease;
+    z-index: 0;
+  }
+  .bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(180deg,
+        rgba(10, 14, 20, 0.55) 0%,
+        rgba(10, 14, 20, 0.30) 35%,
+        rgba(10, 14, 20, 0.55) 70%,
+        rgba(10, 14, 20, 0.88) 100%);
+  }
+
+  /* CONTENT LAYER */
+  .wrap {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    padding: 3.5vmin 4vmin 3.5vmin 4vmin;
+  }
+
+  /* TOP STRIP */
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 2vmin;
+  }
+  .brand {
+    font-size: 1.6vmin;
+    letter-spacing: 0.45em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.85);
+    text-shadow: 0 0.2vmin 0.6vmin rgba(0,0,0,0.6);
+  }
+  .clock {
+    font-size: 2.4vmin;
+    color: rgba(255,255,255,0.95);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.05em;
+    text-shadow: 0 0.2vmin 0.6vmin rgba(0,0,0,0.6);
+  }
+
+  /* MAIN: two columns, hourly strip baseline */
+  .main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 4vmin;
+    min-height: 0;
+    padding-top: 1vmin;
+  }
+
+  /* LEFT COLUMN */
+  .left {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-left: 1.5vmin;
+  }
+  .temp-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 2vmin;
+    margin-bottom: 1vmin;
+  }
+  .temp {
+    font-size: 26vmin;
+    font-weight: 200;
+    line-height: 0.85;
+    letter-spacing: -0.04em;
+    text-shadow: 0 0.6vmin 2vmin rgba(0,0,0,0.5);
+  }
+  .temp .unit {
+    font-size: 8vmin;
+    color: rgba(255,255,255,0.8);
+    font-weight: 300;
+    margin-left: 0.4vmin;
+    vertical-align: top;
+  }
+  .icon-wrap {
+    margin-top: 3vmin;
+    width: 15vmin;
+    height: 15vmin;
+    flex-shrink: 0;
+    filter: drop-shadow(0 0.4vmin 1.2vmin rgba(0,0,0,0.4));
+  }
+  .icon-wrap img { width: 100%; height: 100%; display: block; }
+
+  .condition {
+    font-size: 4.5vmin;
+    margin-top: 1.5vmin;
+    font-weight: 400;
+    letter-spacing: -0.005em;
+    color: rgba(255,255,255,0.95);
+    text-shadow: 0 0.2vmin 0.6vmin rgba(0,0,0,0.5);
+  }
+
+  /* PILLS — slightly larger now */
+  .pills {
+    display: flex;
+    gap: 1.6vmin;
+    margin-top: 3.5vmin;
+    flex-wrap: wrap;
+  }
+  .pill {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 1.6vmin;
+    padding: 1.8vmin 2.6vmin;
+    min-width: 16vmin;
+  }
+  .pill .pill-label {
+    font-size: 1.7vmin;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 0.7vmin;
+  }
+  .pill .pill-value {
+    font-size: 3.3vmin;
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+    color: rgba(255,255,255,0.98);
+    display: flex;
+    align-items: center;
+    gap: 1vmin;
+  }
+  .pill .pill-value .small {
+    font-size: 1.7vmin;
+    color: rgba(255,255,255,0.7);
+    margin-left: 0.3vmin;
+  }
+  /* Wind direction arrow */
+  .wind-arrow {
+    display: inline-block;
+    width: 2.5vmin;
+    height: 2.5vmin;
+    flex-shrink: 0;
+  }
+  .wind-arrow svg { width: 100%; height: 100%; }
+
+  /* RIGHT COLUMN — informational panel */
+  .right {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5vmin;
+    padding-right: 0.5vmin;
+  }
+  .right-section {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 1.6vmin;
+    padding: 2.2vmin 2.4vmin;
+  }
+  .section-label {
+    font-size: 1.4vmin;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 1.2vmin;
+  }
+  /* Today's high/low */
+  .today-temps {
+    display: flex;
+    align-items: baseline;
+    gap: 2.5vmin;
+  }
+  .today-h, .today-l {
+    display: flex;
+    align-items: baseline;
+    gap: 0.8vmin;
+  }
+  .today-h .label, .today-l .label {
+    font-size: 1.6vmin;
+    color: rgba(255,255,255,0.6);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .today-h .value, .today-l .value {
+    font-size: 5vmin;
+    font-weight: 300;
+    font-variant-numeric: tabular-nums;
+  }
+  .today-h .value { color: #ffb347; }
+  .today-l .value { color: #79c0ff; }
+
+  /* Sun arc */
+  .sun-section {
+    padding-top: 2vmin;
+  }
+  .sun-arc-wrap {
+    height: 11vmin;
+    margin: 0.5vmin 0 1.5vmin 0;
+    overflow: visible;
+  }
+  .sun-arc-wrap svg { width: 100%; height: 100%; overflow: visible; }
+  .sun-times {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.5vmin;
+  }
+  .sun-time-block {
+    text-align: center;
+  }
+  .sun-time-block .stl {
+    font-size: 1.3vmin;
+    color: rgba(255,255,255,0.6);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 0.4vmin;
+  }
+  .sun-time-block .stv {
+    font-size: 2.2vmin;
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+    color: rgba(255,255,255,0.95);
+  }
+
+  /* Tomorrow */
+  .tomorrow-row {
+    display: flex;
+    align-items: center;
+    gap: 2vmin;
+  }
+  .tomorrow-icon {
+    width: 7vmin;
+    height: 7vmin;
+    flex-shrink: 0;
+  }
+  .tomorrow-icon img { width: 100%; height: 100%; }
+  .tomorrow-temps {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3vmin;
+  }
+  .tomorrow-temps .row-hi,
+  .tomorrow-temps .row-lo {
+    font-size: 2.4vmin;
+    font-variant-numeric: tabular-nums;
+  }
+  .tomorrow-temps .row-hi { color: #ffb347; }
+  .tomorrow-temps .row-lo { color: #79c0ff; }
+  .tomorrow-temps .lbl {
+    color: rgba(255,255,255,0.55);
+    letter-spacing: 0.15em;
+    font-size: 1.3vmin;
+    text-transform: uppercase;
+    margin-right: 0.6vmin;
+  }
+
+  /* Rain alert (conditional) */
+  .rain-alert {
+    background: rgba(121, 192, 255, 0.15);
+    border: 1px solid rgba(121, 192, 255, 0.35);
+    border-radius: 1.4vmin;
+    padding: 1.8vmin 2.2vmin;
+    display: flex;
+    align-items: center;
+    gap: 1.5vmin;
+  }
+  .rain-alert-icon {
+    width: 5vmin;
+    height: 5vmin;
+    flex-shrink: 0;
+  }
+  .rain-alert-icon img { width: 100%; height: 100%; }
+  .rain-alert-text {
+    font-size: 2vmin;
+    color: rgba(255,255,255,0.95);
+    line-height: 1.35;
+  }
+  .rain-alert-text strong {
+    display: block;
+    font-size: 1.4vmin;
+    color: #79c0ff;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    font-weight: 500;
+    margin-bottom: 0.5vmin;
+  }
+
+  /* HOURLY STRIP — baseline detail row, now 8 hours, larger */
+  .hourly {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 0;
+    padding: 2.5vmin 0 0 0;
+    margin-top: 2vmin;
+    border-top: 1px solid rgba(255,255,255,0.2);
+  }
+  .hour {
+    text-align: center;
+    padding: 0.5vmin 0;
+  }
+  .hour .h-time {
+    font-size: 2vmin;
+    color: rgba(255,255,255,0.8);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 1.2vmin;
+  }
+  .hour .h-icon {
+    width: 7vmin;
+    height: 7vmin;
+    margin: 0 auto 0.8vmin auto;
+    opacity: 1;
+  }
+  .hour .h-icon img { width: 100%; height: 100%; display: block; }
+  .hour .h-temp {
+    font-size: 3.2vmin;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: rgba(255,255,255,0.98);
+  }
+  .hour .h-rain {
+    font-size: 1.6vmin;
+    color: #79c0ff;
+    margin-top: 0.4vmin;
+    letter-spacing: 0.05em;
+  }
+
+  .loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0a0e14;
+    color: #484f58;
+    font-size: 2vmin;
+    z-index: 100;
+  }
+  .loading.hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div class="bg" id="bg"></div>
+
+<div class="wrap">
+  <header>
+    <div class="brand">UBC Vancouver Campus · Current Conditions</div>
+    <div class="clock" id="clock">--:--</div>
+  </header>
+
+  <div class="main">
+    <!-- LEFT: hero + pills -->
+    <div class="left">
+      <div class="temp-row">
+        <div class="temp" id="temp">--<span class="unit">°C</span></div>
+        <div class="icon-wrap" id="icon-wrap"></div>
+      </div>
+      <div class="condition" id="condition">—</div>
+      <div class="pills" id="pills"></div>
+    </div>
+
+    <!-- RIGHT: info panel -->
+    <div class="right" id="right"></div>
+  </div>
+
+  <div class="hourly" id="hourly"></div>
+</div>
+
+<div class="loading" id="loading">Loading weather…</div>
+
+<script>
+const LAT = 49.2606;
+const LON = -123.2460;
+const RELOAD_MS = 15 * 60 * 1000;
+
+const ICON_BASE = 'https://cdn.jsdelivr.net/npm/@bybas/weather-icons/production/fill/all';
+
+const WX = {
+  0:  { label: 'Clear',                icon: 'clear-day',                  icon_night: 'clear-night',                  bg: 'sunny' },
+  1:  { label: 'Mainly Clear',         icon: 'clear-day',                  icon_night: 'clear-night',                  bg: 'sunny' },
+  2:  { label: 'Partly Cloudy',        icon: 'partly-cloudy-day',          icon_night: 'partly-cloudy-night',          bg: 'cloudy' },
+  3:  { label: 'Overcast',             icon: 'overcast-day',               icon_night: 'overcast-night',               bg: 'cloudy' },
+  45: { label: 'Fog',                  icon: 'fog-day',                    icon_night: 'fog-night',                    bg: 'fog' },
+  48: { label: 'Freezing Fog',         icon: 'fog-day',                    icon_night: 'fog-night',                    bg: 'fog' },
+  51: { label: 'Light Drizzle',        icon: 'partly-cloudy-day-drizzle',  icon_night: 'partly-cloudy-night-drizzle',  bg: 'drizzle' },
+  53: { label: 'Drizzle',              icon: 'drizzle',                                                                bg: 'drizzle' },
+  55: { label: 'Heavy Drizzle',        icon: 'drizzle',                                                                bg: 'drizzle' },
+  56: { label: 'Freezing Drizzle',     icon: 'sleet',                                                                  bg: 'freezing-rain' },
+  57: { label: 'Freezing Drizzle',     icon: 'sleet',                                                                  bg: 'freezing-rain' },
+  61: { label: 'Light Rain',           icon: 'partly-cloudy-day-rain',     icon_night: 'partly-cloudy-night-rain',     bg: 'rain-light' },
+  63: { label: 'Rain',                 icon: 'rain',                                                                   bg: 'rain' },
+  65: { label: 'Heavy Rain',           icon: 'extreme-rain',                                                           bg: 'rain-heavy' },
+  66: { label: 'Freezing Rain',        icon: 'sleet',                                                                  bg: 'freezing-rain' },
+  67: { label: 'Freezing Rain',        icon: 'sleet',                                                                  bg: 'freezing-rain' },
+  71: { label: 'Light Snow',           icon: 'partly-cloudy-day-snow',     icon_night: 'partly-cloudy-night-snow',     bg: 'snow-light' },
+  73: { label: 'Snow',                 icon: 'snow',                                                                   bg: 'snow' },
+  75: { label: 'Heavy Snow',           icon: 'extreme-snow',                                                           bg: 'snow-heavy' },
+  77: { label: 'Snow Grains',          icon: 'snowflake',                                                              bg: 'snow' },
+  80: { label: 'Light Showers',        icon: 'partly-cloudy-day-rain',     icon_night: 'partly-cloudy-night-rain',     bg: 'rain-light' },
+  81: { label: 'Showers',              icon: 'rain',                                                                   bg: 'rain' },
+  82: { label: 'Heavy Showers',        icon: 'extreme-rain',                                                           bg: 'rain-heavy' },
+  85: { label: 'Snow Showers',         icon: 'partly-cloudy-day-snow',     icon_night: 'partly-cloudy-night-snow',     bg: 'snow' },
+  86: { label: 'Heavy Snow Showers',   icon: 'extreme-snow',                                                           bg: 'snow-heavy' },
+  95: { label: 'Thunderstorm',         icon: 'thunderstorms',                                                          bg: 'thunderstorm' },
+  96: { label: 'Thunderstorm + Hail',  icon: 'thunderstorms-extreme',                                                  bg: 'thunderstorm' },
+  99: { label: 'Severe Thunderstorm',  icon: 'thunderstorms-extreme',                                                  bg: 'thunderstorm' },
+};
+
+const BG_IMAGES = {
+  'sunny':         'https://images.unsplash.com/photo-1601297183305-6df142704ea2?w=2400&q=80',
+  'cloudy':        'https://images.unsplash.com/photo-1499346030926-9a72daac6c63?w=2400&q=80',
+  'fog':           'https://images.unsplash.com/photo-1487621167305-5d248087c724?w=2400&q=80',
+  'drizzle':       'https://images.unsplash.com/photo-1438449805896-28a666819a20?w=2400&q=80',
+  'rain-light':    'https://images.unsplash.com/photo-1519692933481-e162a57d6721?w=2400&q=80',
+  'rain':          'https://images.unsplash.com/photo-1428592953211-077101b2021b?w=2400&q=80',
+  'rain-heavy':    'https://images.unsplash.com/photo-1534274988757-a28bf1a57c17?w=2400&q=80',
+  'freezing-rain': 'https://images.unsplash.com/photo-1457269449834-928af64c684d?w=2400&q=80',
+  'snow-light':    'https://images.unsplash.com/photo-1547500818-faecf76e5a64?w=2400&q=80',
+  'snow':          'https://images.unsplash.com/photo-1518931412505-5c6c5a02a89c?w=2400&q=80',
+  'snow-heavy':    'https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?w=2400&q=80',
+  'thunderstorm':  'https://images.unsplash.com/photo-1605727216801-e27ce1d0cc28?w=2400&q=80',
+};
+
+function iconNameFor(wx, isDay) {
+  if (!isDay && wx.icon_night) return wx.icon_night;
+  return wx.icon;
+}
+function iconUrl(name) {
+  return `${ICON_BASE}/${name}.svg`;
+}
+
+async function loadWeather() {
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast`
+      + `?latitude=${LAT}&longitude=${LON}`
+      + `&current=temperature_2m,apparent_temperature,relative_humidity_2m,`
+      + `weather_code,wind_speed_10m,wind_direction_10m,precipitation,is_day`
+      + `&hourly=temperature_2m,weather_code,precipitation_probability`
+      + `&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset`
+      + `&forecast_days=2`
+      + `&timezone=America%2FVancouver`;
+
+    const res = await fetch(url);
+    const data = await res.json();
+    render(data);
+    document.getElementById('loading').classList.add('hidden');
+  } catch (e) {
+    console.error('Weather load failed:', e);
+    document.getElementById('loading').textContent = 'Unable to load weather.';
+  }
+}
+
+function render(data) {
+  const c = data.current;
+  const code = c.weather_code;
+  const isDay = !!c.is_day;
+  const wx = WX[code] || { label: 'Conditions', icon: 'cloudy', bg: 'cloudy' };
+
+  // Background
+  document.getElementById('bg').style.backgroundImage =
+    `url('${BG_IMAGES[wx.bg] || BG_IMAGES['cloudy']}')`;
+
+  // Hero: temp + icon + condition
+  document.getElementById('temp').innerHTML =
+    `${Math.round(c.temperature_2m)}<span class="unit">°C</span>`;
+  document.getElementById('icon-wrap').innerHTML =
+    `<img src="${iconUrl(iconNameFor(wx, isDay))}" alt="">`;
+  document.getElementById('condition').textContent = wx.label;
+
+  // Pills — with wind arrow
+  const windDeg = c.wind_direction_10m;
+  const windDir = degreesToCompass(windDeg);
+  document.getElementById('pills').innerHTML = `
+    <div class="pill">
+      <div class="pill-label">Feels Like</div>
+      <div class="pill-value">${Math.round(c.apparent_temperature)}<span class="small">°C</span></div>
+    </div>
+    <div class="pill">
+      <div class="pill-label">Humidity</div>
+      <div class="pill-value">${Math.round(c.relative_humidity_2m)}<span class="small">%</span></div>
+    </div>
+    <div class="pill">
+      <div class="pill-label">Wind</div>
+      <div class="pill-value">
+        ${windArrowSVG(windDeg)}
+        ${Math.round(c.wind_speed_10m)}<span class="small"> km/h ${windDir}</span>
+      </div>
+    </div>
+    <div class="pill">
+      <div class="pill-label">Precipitation</div>
+      <div class="pill-value">${(c.precipitation || 0).toFixed(1)}<span class="small"> mm</span></div>
+    </div>
+  `;
+
+  // RIGHT COLUMN
+  renderRightColumn(data, isDay);
+
+  // Hourly strip
+  renderHourly(data);
+}
+
+function renderRightColumn(data, isDay) {
+  const daily = data.daily;
+  const todayHi = Math.round(daily.temperature_2m_max[0]);
+  const todayLo = Math.round(daily.temperature_2m_min[0]);
+  const sunrise = new Date(daily.sunrise[0]);
+  const sunset  = new Date(daily.sunset[0]);
+  const tmrwCode = daily.weather_code[1];
+  const tmrwWx   = WX[tmrwCode] || { icon: 'cloudy' };
+  const tmrwHi   = Math.round(daily.temperature_2m_max[1]);
+  const tmrwLo   = Math.round(daily.temperature_2m_min[1]);
+
+  // Conditional rain alert — find next high-probability rain hour in next 6h
+  const rainAlert = findUpcomingRain(data);
+
+  let html = `
+    <div class="right-section">
+      <div class="section-label">Today</div>
+      <div class="today-temps">
+        <div class="today-h"><span class="label">High</span><span class="value">${todayHi}°</span></div>
+        <div class="today-l"><span class="label">Low</span><span class="value">${todayLo}°</span></div>
+      </div>
+    </div>
+
+    <div class="right-section sun-section">
+      <div class="section-label">Daylight</div>
+      <div class="sun-arc-wrap">${sunArcSVG(sunrise, sunset)}</div>
+      <div class="sun-times">
+        <div class="sun-time-block">
+          <div class="stl">Sunrise</div>
+          <div class="stv">${fmtTime(sunrise)}</div>
+        </div>
+        <div class="sun-time-block">
+          <div class="stl">Sunset</div>
+          <div class="stv">${fmtTime(sunset)}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="right-section">
+      <div class="section-label">Tomorrow</div>
+      <div class="tomorrow-row">
+        <div class="tomorrow-icon"><img src="${iconUrl(iconNameFor(tmrwWx, true))}" alt=""></div>
+        <div class="tomorrow-temps">
+          <div class="row-hi"><span class="lbl">High</span>${tmrwHi}°</div>
+          <div class="row-lo"><span class="lbl">Low</span>${tmrwLo}°</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  if (rainAlert) {
+    html += `
+      <div class="rain-alert">
+        <div class="rain-alert-icon"><img src="${iconUrl('raindrop')}" alt=""></div>
+        <div class="rain-alert-text">
+          <strong>Heads up</strong>
+          Rain expected around ${rainAlert.timeStr} (${rainAlert.pop}%)
+        </div>
+      </div>
+    `;
+  }
+
+  document.getElementById('right').innerHTML = html;
+}
+
+function findUpcomingRain(data) {
+  const now = new Date();
+  const cutoff = new Date(now.getTime() + 6 * 60 * 60 * 1000); // next 6 hours
+  const hourly = data.hourly;
+  for (let i = 0; i < hourly.time.length; i++) {
+    const t = new Date(hourly.time[i]);
+    if (t < now) continue;
+    if (t > cutoff) break;
+    const code = hourly.weather_code[i];
+    const pop  = hourly.precipitation_probability[i];
+    // Codes that mean rain in some form
+    const rainCodes = [51,53,55,61,63,65,80,81,82,95,96,99];
+    if (pop >= 60 && rainCodes.includes(code)) {
+      return {
+        timeStr: t.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit' }),
+        pop,
+      };
+    }
+  }
+  return null;
+}
+
+function renderHourly(data) {
+  const now = new Date();
+  const hourly = data.hourly;
+  const times = hourly.time;
+  let startIdx = 0;
+  for (let i = 0; i < times.length; i++) {
+    if (new Date(times[i]) >= now) { startIdx = i; break; }
+  }
+  const slice = times.slice(startIdx, startIdx + 8);
+  let html = '';
+  for (let i = 0; i < slice.length; i++) {
+    const idx = startIdx + i;
+    const t = new Date(times[idx]);
+    const hourWx = WX[hourly.weather_code[idx]] || { icon: 'cloudy' };
+    const hourIsDay = t.getHours() >= 6 && t.getHours() < 20;
+    const pop = hourly.precipitation_probability[idx];
+    html += `
+      <div class="hour">
+        <div class="h-time">${t.toLocaleTimeString('en-CA', { hour: 'numeric' })}</div>
+        <div class="h-icon"><img src="${iconUrl(iconNameFor(hourWx, hourIsDay))}" alt=""></div>
+        <div class="h-temp">${Math.round(hourly.temperature_2m[idx])}°</div>
+        ${pop >= 20 ? `<div class="h-rain">${pop}%</div>` : ''}
+      </div>
+    `;
+  }
+  document.getElementById('hourly').innerHTML = html;
+}
+
+/* ---------- Wind direction arrow ---------- */
+function windArrowSVG(deg) {
+  // Wind direction is "FROM" — arrow should point in the direction wind is heading TO
+  // (degree + 180 to flip). 0deg = arrow pointing up (north).
+  const rotation = (deg + 180) % 360;
+  return `
+    <span class="wind-arrow" style="transform: rotate(${rotation}deg);">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+           stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="20" x2="12" y2="4"/>
+        <polyline points="6 10 12 4 18 10"/>
+      </svg>
+    </span>
+  `;
+}
+
+/* ---------- Sun arc SVG ---------- */
+function sunArcSVG(sunrise, sunset) {
+  const now = new Date();
+  const dayMs = sunset - sunrise;
+  const elapsed = now - sunrise;
+  const progress = elapsed / dayMs;
+  const sunIsUp = progress >= 0 && progress <= 1;
+  const clamped = Math.max(0, Math.min(1, progress));
+
+  // Arc from (10, 70) to (290, 70), peak around y=10
+  const cx = 150, cy = 70;
+  const rx = 140, ry = 60;
+  const theta = Math.PI - (clamped * Math.PI);
+  const sunX = cx + rx * Math.cos(theta);
+  const sunY = cy - ry * Math.sin(theta);
+
+  return `
+    <svg viewBox="0 0 300 80" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <linearGradient id="sun-arc-grad" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#ffb84d" stop-opacity="0.7"/>
+          <stop offset="50%" stop-color="#ffd700" stop-opacity="0.9"/>
+          <stop offset="100%" stop-color="#ff6b4d" stop-opacity="0.7"/>
+        </linearGradient>
+        <radialGradient id="sun-fill" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#fff8e0"/>
+          <stop offset="60%" stop-color="#ffd700"/>
+          <stop offset="100%" stop-color="#ff8c40"/>
+        </radialGradient>
+      </defs>
+
+      <!-- Horizon -->
+      <line x1="0" y1="70" x2="300" y2="70"
+            stroke="rgba(255,255,255,0.2)" stroke-width="1" stroke-dasharray="3 4"/>
+
+      <!-- Arc -->
+      <path d="M 10 70 A 140 60 0 0 1 290 70"
+            fill="none" stroke="url(#sun-arc-grad)" stroke-width="2" stroke-linecap="round"/>
+
+      <!-- Endpoint dots -->
+      <circle cx="10"  cy="70" r="3" fill="#ffb84d"/>
+      <circle cx="290" cy="70" r="3" fill="#ff6b4d"/>
+
+      ${sunIsUp ? `
+        <circle cx="${sunX}" cy="${sunY}" r="8" fill="url(#sun-fill)"
+                filter="drop-shadow(0 0 6px rgba(255, 215, 0, 0.7))"/>
+      ` : `
+        <!-- Below-horizon indicator: small moon mid-arc -->
+        <text x="150" y="50" text-anchor="middle" fill="rgba(255,255,255,0.5)"
+              font-size="20" font-family="inherit">🌙</text>
+      `}
+    </svg>
+  `;
+}
+
+function degreesToCompass(deg) {
+  const dirs = ['N','NE','E','SE','S','SW','W','NW'];
+  return dirs[Math.round(deg / 45) % 8];
+}
+function fmtTime(d) {
+  return d.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit' });
+}
+function updateClock() {
+  document.getElementById('clock').textContent =
+    new Date().toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' });
+}
+
+loadWeather();
+updateClock();
+setInterval(loadWeather, RELOAD_MS);
+setInterval(updateClock, 30000);
+</script>
+</body>
+</html>
